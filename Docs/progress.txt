@@ -1,0 +1,46 @@
+30.5.26
+- Results of printing the cache location, valid and tag information for pc < 15:
+	0 1 1
+	0 1 1
+	0 1 1
+	0 1 1
+	1 0 0
+	1 0 0
+	1 0 0
+	1 0 0
+	2 0 0
+	2 0 0
+	2 0 0
+	2 0 0
+	3 0 0
+	3 0 0
+	3 0 0
+	3 0 0
+	
+	This is correct fo the test data placed into the revelant arrays.
+
+- Cache eviction results - Where column one corresponds to the instruction in a cache entry and the other one its valid bit.
+	0 0
+	4 1
+	6 1
+	0 1
+	0 0
+	0 1
+	0 1
+	0 1
+	0 0
+	0 1
+	0 1
+	0 1
+	0 0
+	0 1
+	0 1
+	0 1
+
+	The data set is valid. Initially, all cache entries are invalid, so, a cache miss would occur and main memory needs to be searched for. However, 
+	as soon as the instruction is fetched, three things are altered. One, the valid bit, which is set to true. Two, the tag, which is identified in the
+	two least signifcant bits. And lastly, the instruction which in our case becomes four. This process repeats four times as four memory locations are
+	mapped two one cache locations. The fifth entry could be thought of as a reset, all its fields are zero so the steps mentioned before are repeated.
+	
+	
+
