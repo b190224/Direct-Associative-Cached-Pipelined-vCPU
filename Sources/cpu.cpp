@@ -31,7 +31,6 @@ void CPU::cycle() {
 	while (run) {
 		if (pc > 15) break;
 
-		
 		writeBack();
 		dataMemoryAccess();
 		execute();
@@ -40,6 +39,8 @@ void CPU::cycle() {
 		
 		updatePipelineRegisters();
 	}
+	
+	//std::cout << regs[1];
 }
 
 void CPU::fetch() {	
@@ -48,7 +49,7 @@ void CPU::fetch() {
 	}
 	else {
 		cache.handleCacheMiss(memory.ins[pc], pc);
-		writepip[IF_ID].ins = ins;
+		writepip[IF_ID].ins = memory.ins[pc];
 	}
 	
 	if (readpip[IF_ID].cs.pcwrite) ++pc;
@@ -78,6 +79,17 @@ void CPU::decode() {
 			break;
 		}
 		
+		case ADD: {
+			updateSignals(writepip[ID_EX].cs, true, false, true, true, false, false, false);
+			break;
+		}
+		
+		case SUB: {
+			updateSignals(writepip[ID_EX].cs, true, false, true, true, false, false, false);
+			break;
+		}
+		
+		
 		default: {
 			defaultSignals(writepip[ID_EX].cs);
 			break;
@@ -88,10 +100,13 @@ void CPU::decode() {
 		writepip[ID_EX].opa = regs[(readpip[IF_ID].ins & 0x1C0) >> 6];
 		writepip[ID_EX].opb = regs[(readpip[IF_ID].ins & 0x38) >> 3];
 		writepip[ID_EX].opc = regs[readpip[IF_ID].ins & 0x7];
+		
+		writepip[ID_EX].rdb = (readpip[IF_ID].ins & 0x38) >> 3;
+		writepip[ID_EX].rdc = readpip[IF_ID].ins & 0x7;
 	}
 	
 	if (writepip[ID_EX].cs.regwrite) {
-		writepip[ID_EX].regdest = (readpip[IF_ID].ins & 0x1C0) >> 6;
+		writepip[ID_EX].rda = (readpip[IF_ID].ins & 0x1C0) >> 6;
 	}
 	
 	if (writepip[ID_EX].cs.immsel) {
@@ -130,7 +145,7 @@ void CPU::execute() {
 void CPU::dataMemoryAccess() {
 	writepip[MEM_WB].cs = readpip[EX_MEM].cs;
 	writepip[MEM_WB].result = readpip[EX_MEM].result;
-	writepip[MEM_WB].regdest = readpip[EX_MEM].regdest;
+	writepip[MEM_WB].rda = readpip[EX_MEM].rda;
 	
 	if (readpip[EX_MEM].cs.memread) {
 		if (cache.isValidData(readpip[EX_MEM].memdest)) {
@@ -139,29 +154,54 @@ void CPU::dataMemoryAccess() {
 		else {
 			cache.handleCacheMiss(readpip[EX_MEM].result, readpip[EX_MEM].memdest);
 			writepip[MEM_WB].result = memory.data[readpip[EX_MEM].memdest];
-			
-			std::cout << int(writepip[MEM_WB].result);
 		}	
 	}
 }
 
 void CPU::writeBack() {
-
+	if (readpip[MEM_WB].cs.regwrite) {
+		regs[readpip[MEM_WB].rda] = readpip[MEM_WB].result;
+	}
 }
 
 void CPU::nop() {}
 
 void CPU::mov() {
-	writepip[EX_MEM].regdest = readpip[ID_EX].regdest;
+	writepip[EX_MEM].rda = readpip[ID_EX].rda;
 	writepip[EX_MEM].result = readpip[ID_EX].opb;
+	
+	if ((readpip[EX_MEM].rda == readpip[ID_EX].rdb) && readpip[EX_MEM].cs.regwrite) {
+		writepip[EX_MEM].result = readpip[EX_MEM].result;
+	}
 }
 
 void CPU::lda() {
-	writepip[EX_MEM].regdest = readpip[ID_EX].regdest;
+	writepip[EX_MEM].rda = readpip[ID_EX].rda;
 	writepip[EX_MEM].memdest = readpip[ID_EX].opb + readpip[ID_EX].imm;
+	
+	if ((readpip[EX_MEM].rda == readpip[ID_EX].rdb) && readpip[EX_MEM].cs.regwrite) {
+		writepip[EX_MEM].memdest = readpip[EX_MEM].result + readpip[ID_EX].imm;
+	}
 }
 
 void CPU::sta() {
 	writepip[EX_MEM].memdest = readpip[ID_EX].opb + readpip[ID_EX].imm;
 	writepip[EX_MEM].result = readpip[ID_EX].opa;
 }
+
+void CPU::add() {
+	
+}
+
+void CPU::sub() {
+	
+}
+
+void CPU::andd() {
+	
+}
+
+void CPU::orr() {
+	
+}
+
